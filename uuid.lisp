@@ -150,7 +150,7 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 
 (defmethod print-object ((id uuid) stream)
   "Prints an uuid in the string represenation of an uuid. (example string 6ba7b810-9dad-11d1-80b4-00c04fd430c8)"
-  (format stream "~8,'0X-~4,'0X-~4,'0X-~2,'0X~2,'0X-~12,'0X~%" 
+  (format stream "~8,'0X-~4,'0X-~4,'0X-~2,'0X~2,'0X-~12,'0X" 
 	  (time-low id)
 	  (time-mid id)
 	  (time-high id)
