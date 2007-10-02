@@ -38,6 +38,7 @@ float: right;
 <h2>Platforms</h2>
 <p>UUID has been run on Clisp (Windows), CMUCL(19d) and SBCL(1.0.5 - Linux). Plattform specific code is needed only for the generation of time based uuids for getting the MAC address of an ethernet device. If run in an unsupported lisp implementation a random number will be used for the node id instead of the MAC address.
 <h2>History</h2>
+<p>02 October 2007 - Don't print a newline as part of the uuid.</p>
 <p>07 July 2007 - Reinitialize *random-state* when loading in SBCL to ensure randomnes of v4 uuids.</p>
 <p>30 May 2007 - Added support for SBCL.</p>
 <p>17 April 2007 - Updated the package with the correct file.</p>
@@ -112,7 +113,7 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 <p><b>(print-bytes stream uuid)</b> <i>function</i></p>
 <p class="apidoc">Prints the raw bytes in hex form. (example output 6ba7b8109dad11d180b400c04fd430c8).</b>
 <hr/>
-<p> Last modified: Sat Jul 7 10:55:59 EEST 2007 &nbsp;&nbsp;&nbsp;
+<p> Last modified: Tue Oct 2 21:46:16 EEST 2007 &nbsp;&nbsp;&nbsp;
 <a href="http://www.gnu.org/software/emacs/"><img src="emacs.jpeg"/></a>
 <a href="http://opensource.org"><img src="opensource-55x48.png"/></a></p>
 </body>
