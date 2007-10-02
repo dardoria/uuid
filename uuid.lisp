@@ -169,7 +169,6 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 	  (clock-seq-low uuid)
 	  (node uuid)))
 
-
 (defun make-null-uuid ()
   "Generates a NULL uuid (i.e 00000000-0000-0000-0000-000000000000)"
   (make-instance 'uuid))
