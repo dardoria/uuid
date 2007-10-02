@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Universally Unique Indentifier</title>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta name="description" content="Common Lisp library for creation of UUIDs according to RFC 4122" />
+<meta name="keywords" content="common lisp, lisp, uuid, rfc 4122" />
+<style type="text/css">
+h1, h2, h3, h4, h5, h6 {
+  color: #64765A;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+}
+body {
+margin-left: 5em;
+margin-right: 5em;
+  font-family: sans-serif;
+}
+div.repl {
+background: #c9e0e6;
+padding-left: 1em;
+}
+p.apidoc {
+padding-left: 1em;
+}
+#logo {
+display: block;
+float: right;
+}
+</style>
+</head>
+<body>
+<div id="logo"><a href="http://cl-user.net"><img src="lisplogo.png"/></a></div>
+<h1>UUID</h1>
+<p> UUID is a Common Lisp librabry for generation of universally unique identifiers as described by RFC 4122.</p>
+<h2>Description</h2>
+<p> UUID provides methods for the generation of uuids version 1 (time based), 3 (name based with MD5 hashing), 5 (name based with SHA1 hashing) and 4 (random uuids).</p>
+<h2>Platforms</h2>
+<p>UUID has been run on Clisp (Windows), CMUCL(19d) and SBCL(1.0.5 - Linux). Plattform specific code is needed only for the generation of time based uuids for getting the MAC address of an ethernet device. If run in an unsupported lisp implementation a random number will be used for the node id instead of the MAC address.
+<h2>History</h2>
+<p>07 July 2007 - Reinitialize *random-state* when loading in SBCL to ensure randomnes of v4 uuids.</p>
+<p>30 May 2007 - Added support for SBCL.</p>
+<p>17 April 2007 - Updated the package with the correct file.</p>
+<p>16 April 2007 - Released</p>
+<h2>Dependencies</h2>
+<p><a href="http://method-combination.net/lisp/ironclad/">Ironclad</a> - needed for the generation of version 3 and version 5 uuids.</p>
+<h2>License</h2>
+<p><a href="http://opensource.franz.com/preamble.html">Lisp Lesser GNU Public License (LLGPL)</a></p>
+<h2>Author</h2>
+<p>Boian Tzonev &lt;boiantz@gmail.com&gt; </p>
+<h2>Download</h2>
+<p><a href="uuid.tar.gz">http://www.dardoria.net/software/uuid.tar.gz</a></p>
+<h2>Installation</h2>
+<p>UUID can be loaded with asdf. After unpacking the archive UUID can be loaded with: </p>
+<div class="repl">
+<tt>CL-USER> (asdf:oos 'asdf:load-op 'uuid)</tt>
+</div>
+<h2>Usage</h2>
+<div class="repl">
+<tt>CL-USER> (in-package :uuid)</tt>
+</div>
+<p>Generation of version 1 (time based) uuid:</p>
+<div class="repl">
+<tt>UUID> (make-v1-uuid)</tt><br/>
+<tt>D79FC180-ED1C-11DB-90E2-345C6EAC45A5</tt>
+</div>
+<p>Generation of version 3 (name based MD5) uuid in the DNS namespace:</p>
+<div class="repl">
+<tt>UUID> (make-v3-uuid +namespace-dns+ "www.widgets.com")</tt><br/>
+<tt>3D813CBB-47FB-32BA-91DF-831E1593AC29</tt>
+</div>
+<p>Generation of version 4 (random) uuid:</p>
+<div class="repl">
+<tt>UUID> (make-v4-uuid)</tt><br/>
+<tt>5EB052B1-BEF9-40E5-9EC5-D735A12DBF48</tt>
+</div>
+<p>Generation of version 5 (name based SHA1) uuid in the DNS namespace:</p>
+<div class="repl">
+<tt>UUID> (make-v5-uuid +namespace-dns+ "www.widgets.com")</tt><br/>
+<tt>21F7F8DE-8051-5B89-8680-0195EF798B6A</tt>
+</div>
+<h2>Documentation</h2>
+<p><b>*ticks-per-count*</b> <i>variable</i></P>
+<p class="apidoc">Holds the amount of ticks per count. The ticks per count determine the number 
+of possible version 1 uuids created for one time interval. Common Lisp provides 
+INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current system so 
+*ticks-per-count* can be set to INTERNAL-TIME-UINITS-PER-SECOND</p>
+<p><b>+namespace-dns+</b> <i>constant</i></p>
+<p class="apidoc">The DNS Namespace. Can be used for the generation of uuids version 3 and 5.</p>
+<p><b>+namespace-url+</b> <i>constant</i></p>
+<p class="apidoc">The URL Namespace. Can be used for the generation of uuids version 3 and 5.</p>
+<p><b>+namespace-oid+</b> <i>constant</i></p>
+<p class="apidoc">The OID Namespace. Can be used for the generation of uuids version 3 and 5.</p>
+<p><b>+namespace-x500+</b> <i>constant</i></p>
+<p class="apidoc">The x500+ Namespace. Can be used for the generation of uuids version 3 and 5.</p>
+<p><b>uuid</b> <i>class</i></p>
+<p class="apidoc">Represents an uuid</p>
+<p><b>(make-uuid-from-string uuid-string)</b> <i>function</i></p>
+<p class="apidoc">Creates an uuid from the string represenation of an uuid. (example input string 6ba7b810-9dad-11d1-80b4-00c04fd430c8)</p>
+<p><b>(make-null-uuid)</b> <i>function</i></p>
+<p class="apidoc">Returns a NULL uuid (i.e 00000000-0000-0000-0000-000000000000)</p>
+<p><b>(make-v1-uuid)</b> <i>function</i></p>
+<p class="apidoc">Returns a version 1 (time-based) uuid.</p>
+<p><b>(make-v3-uuid namespace name)</b> <i>function</i></p>
+<p class="apidoc">Returns a version 3 (named based MD5) uuid.</p>
+<p><b>(make-v4-uuid)</b> <i>function</i></p>
+<p class="apidoc">Returns a version 4 (random) uuid.</p>
+<p><b>(make-v5-uuid namespace name)</b> <i>function</i></p>
+<p class="apidoc">Returns a version 5 (name based SHA1) uuid.</p>
+<p><b>(uuid-to-byte-array uuid)</b> <i>function</i></p>
+<p class="apidoc">Converts an uuid to byte-array.</p>
+<p><b>(print-bytes stream uuid)</b> <i>function</i></p>
+<p class="apidoc">Prints the raw bytes in hex form. (example output 6ba7b8109dad11d180b400c04fd430c8).</b>
+<hr/>
+<p> Last modified: Sat Jul 7 10:55:59 EEST 2007 &nbsp;&nbsp;&nbsp;
+<a href="http://www.gnu.org/software/emacs/"><img src="emacs.jpeg"/></a>
+<a href="http://opensource.org"><img src="opensource-55x48.png"/></a></p>
+</body>
