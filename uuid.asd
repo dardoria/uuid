@@ -8,7 +8,7 @@
 ; @todo fill all fields
 (defsystem uuid
   :name "uuid"
-  :version "0.0.1"
+  :version "27-07-2008"
   :maintainer "Boian Tzonev"
   :author "Boian Tzonev"
   :licence "LLGPL"
