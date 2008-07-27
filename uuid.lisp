@@ -6,9 +6,10 @@
 
 (defpackage :uuid
   (:use :common-lisp :ironclad)
+  (:shadowing-import-from :common-lisp #:null) ;ironclad shadows cl:null to declare its null-cypher, I don't use either so take it from cl
   (:export :uuid :ticks-per-count* :make-null-uuid :make-uuid-from-string :make-v1-uuid :make-v3-uuid 
 	   :make-v4-uuid :make-v5-uuid :+namespace-dns+ :+namespace-url+ :+namespace-oid+ 
-	   :+namespace-x500+ :print-bytes :uuid-to-byte-array))
+	   :+namespace-x500+ :print-bytes :uuid-to-byte-array :byte-array-to-uuid))
 
 (in-package :uuid)
 
@@ -135,7 +136,7 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 	      
 
 (defun format-v3or5-uuid (hash ver)
-  "Helper function to format a version 3 or 5 uuid. Formattings means setting the appropriate version bytes."
+  "Helper function to format a version 3 or 5 uuid. Formatting means setting the appropriate version bytes."
   (when (or (= ver 3) (= ver 5))
     (make-instance 'uuid
 		   :time-low (load-bytes hash :start 0 :end 3)
@@ -179,7 +180,7 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
   (let ((timestamp (get-timestamp)))
     (when (zerop *clock-seq*)
       (setf *clock-seq* (random 10000)))
-    (when (null *node*)
+    (unless *node*
       (setf *node* (get-node-id)))
     (make-instance 'uuid
 		   :time-low (ldb (byte 32 0) timestamp)
@@ -220,21 +221,38 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
   (let ((array (make-array 16 :element-type '(unsigned-byte 8))))
     (with-slots (time-low time-mid time-high-and-version clock-seq-and-reserved clock-seq-low node)
 		uuid
-		(loop for i from 0 to 3
-		      do (setf (aref array i) (ldb (byte 8 i) time-low)))
-		(loop for i from 0 to 1
-		      with pos = (+ i 4)
-		      do (setf (aref array pos) (ldb (byte 8 i) time-mid)))
-		(loop for i from 0 to 1
-		      with pos = (+ i 6)
-		      do (setf (aref array pos) (ldb (byte 8 i) time-high-and-version)))
+		(loop for i from 3 downto 0
+		      do (setf (aref array (- 3 i)) (ldb (byte 8 (* 8 i)) time-low)))
+		(loop for i from 5 downto 4
+		      do (setf (aref array i) (ldb (byte 8 (* 8 (- 5 i))) time-mid)))
+		(loop for i from 7 downto 6
+		      do (setf (aref array i) (ldb (byte 8 (* 8 (- 7 i))) time-high-and-version)))
 		(setf (aref array 8) (ldb (byte 8 0) clock-seq-and-reserved))
 		(setf (aref array 9) (ldb (byte 8 0) clock-seq-low))
-		(loop for i from 0 to 5
-		      with pos = (+ i 10)
-		      do (setf (aref array pos) (ldb (byte 8 i) node)))
+		(loop for i from 15 downto 10
+		      do (setf (aref array i) (ldb (byte 8 (* 8 (- 15 i))) node)))
     array)))
 
+(defmacro arr-to-bytes (from to array)
+  "Helper macro used in byte-array-to-uuid."
+  `(loop for i from ,from to ,to
+	 with res = 0
+	 do (setf (ldb (byte 8 (* 8 (- ,to i))) res) (aref ,array i))
+	 finally (return res)))
+
+(defun byte-array-to-uuid (array)
+  "Converts a byte-array generated with uuid-to-byte-array to an uuid."
+  (assert (and (= (array-rank array) 1)
+	       (= (array-total-size array) 16))
+	  (array)
+	  "Please provide a one-dimensional array with 16 elements of type (unsigned-byte 8)")
+  (make-instance 'uuid
+		 :time-low (arr-to-bytes 0 3 array)
+		 :time-mid (arr-to-bytes 4 5 array)
+		 :time-high (arr-to-bytes 6 7 array)
+		 :clock-seq-var (aref array 8)
+		 :clock-seq-low (aref array 9)
+		 :node (arr-to-bytes 10 15 array)))
  
 (defun digest-uuid (ver uuid name)
   "Helper function that produces a digest from a namespace and a string. Used for the 
