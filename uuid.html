@@ -38,10 +38,12 @@ float: right;
 <h2>Platforms</h2>
 <p>UUID has been run on Clisp (Windows), CMUCL(19d) and SBCL(1.0.5 - Linux). Plattform specific code is needed only for the generation of time based uuids for getting the MAC address of an ethernet device. If run in an unsupported lisp implementation a random number will be used for the node id instead of the MAC address.
 <h2>History</h2>
+<p>27 July 2008 - Resolve loading issue due to Ironclad shadowing cl:null. (Reported by Maciek Pasternacki)</p>
+<p>20 January 2008 - Fixed uuid-to-byte-array and provided byte-array-to-uuid.</p>
 <p>02 October 2007 - Don't print a newline as part of the uuid.</p>
-<p>07 July 2007 - Reinitialize *random-state* when loading in SBCL to ensure randomnes of v4 uuids.</p>
+<p>07 July 2007 - Reinitialize *random-state* when loading in SBCL to ensure randomnes of v4 uuids. (Reported by Brian Seitz)</p>
 <p>30 May 2007 - Added support for SBCL.</p>
-<p>17 April 2007 - Updated the package with the correct file.</p>
+<p>17 April 2007 - Updated the package with the correct file. (Reported by Rafael Cavallaro)</p>
 <p>16 April 2007 - Released</p>
 <h2>Dependencies</h2>
 <p><a href="http://method-combination.net/lisp/ironclad/">Ironclad</a> - needed for the generation of version 3 and version 5 uuids.</p>
@@ -110,10 +112,13 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 <p class="apidoc">Returns a version 5 (name based SHA1) uuid.</p>
 <p><b>(uuid-to-byte-array uuid)</b> <i>function</i></p>
 <p class="apidoc">Converts an uuid to byte-array.</p>
+<p><b>(byte-array-to-uuid byte-array)</b> <i>function</i></p>
+<p class="apidoc">Converts a byte-array generated with uuid-to-byte-array to an uuid.</p>
 <p><b>(print-bytes stream uuid)</b> <i>function</i></p>
 <p class="apidoc">Prints the raw bytes in hex form. (example output 6ba7b8109dad11d180b400c04fd430c8).</b>
 <hr/>
-<p> Last modified: Tue Oct 2 21:46:16 EEST 2007 &nbsp;&nbsp;&nbsp;
+<p> Last modified: Sun Jul 27 11:01:31 EEST 2008 &nbsp;&nbsp;&nbsp;
 <a href="http://www.gnu.org/software/emacs/"><img src="emacs.jpeg"/></a>
 <a href="http://opensource.org"><img src="opensource-55x48.png"/></a></p>
 </body>
+
