@@ -7,7 +7,7 @@
 (defpackage :uuid
   (:use :common-lisp :ironclad)
   (:shadowing-import-from :common-lisp #:null) ;ironclad shadows cl:null to declare its null-cypher, I don't use either so take it from cl
-  (:export :uuid :ticks-per-count* :make-null-uuid :make-uuid-from-string :make-v1-uuid :make-v3-uuid 
+  (:export :uuid :*ticks-per-count* :make-null-uuid :make-uuid-from-string :make-v1-uuid :make-v3-uuid 
 	   :make-v4-uuid :make-v5-uuid :+namespace-dns+ :+namespace-url+ :+namespace-oid+ 
 	   :+namespace-x500+ :print-bytes :uuid-to-byte-array :byte-array-to-uuid))
 
