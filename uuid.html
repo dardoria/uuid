@@ -36,8 +36,9 @@ float: right;
 <h2>Description</h2>
 <p> UUID provides methods for the generation of uuids version 1 (time based), 3 (name based with MD5 hashing), 5 (name based with SHA1 hashing) and 4 (random uuids).</p>
 <h2>Platforms</h2>
-<p>UUID has been run on Clisp (Windows), CMUCL(19d) and SBCL(1.0.5 - Linux). Plattform specific code is needed only for the generation of time based uuids for getting the MAC address of an ethernet device. If run in an unsupported lisp implementation a random number will be used for the node id instead of the MAC address.
+<p>UUID has been run on Clisp (Windows), CMUCL(19d), SBCL(1.0.5 - Linux) and Allegro (Linux). Plattform specific code is needed only for the generation of time based (version 1) uuids for getting the MAC address of an ethernet device. If run in an unsupported lisp implementation a random number will be used for the node id instead of the MAC address.
 <h2>History</h2>
+<p>26 May 2009 - Added suport for Allegron on Linux (Contributed by Andrew Philpot). Added suport for formatting as URN (Thanks to Kim Minh Kaplan).</p>
 <p>27 July 2008 - Resolve loading issue due to Ironclad shadowing cl:null. (Reported by Maciek Pasternacki)</p>
 <p>20 January 2008 - Fixed uuid-to-byte-array and provided byte-array-to-uuid.</p>
 <p>02 October 2007 - Don't print a newline as part of the uuid.</p>
@@ -115,9 +116,11 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 <p><b>(byte-array-to-uuid byte-array)</b> <i>function</i></p>
 <p class="apidoc">Converts a byte-array generated with uuid-to-byte-array to an uuid.</p>
 <p><b>(print-bytes stream uuid)</b> <i>function</i></p>
-<p class="apidoc">Prints the raw bytes in hex form. (example output 6ba7b8109dad11d180b400c04fd430c8).</b>
+<p class="apidoc">Prints the raw bytes in hex form. (example output 6ba7b8109dad11d180b400c04fd430c8).</p>
+<p><b>(format-as-urn stream uuid)</b> <i>function</i></p>
+<p class="apidoc"> Formats the UUID as URN (example output urn:uuid:ea0e0cb8-7ed8-4b10-8214-1a175e982cc6).</p>
 <hr/>
-<p> Last modified: Sun Jul 27 11:01:31 EEST 2008 &nbsp;&nbsp;&nbsp;
+<p> Last modified: Tue May 26 23:05:54 EEST 2009 &nbsp;&nbsp;&nbsp;
 <a href="http://www.gnu.org/software/emacs/"><img src="emacs.jpeg"/></a>
 <a href="http://opensource.org"><img src="opensource-55x48.png"/></a></p>
 </body>

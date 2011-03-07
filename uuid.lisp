@@ -18,14 +18,13 @@
 generated for the first time and remains unchanged during a whole session.")
 
 (defvar *node* nil 
-  "Holds the IEEE 802 MAC address or a random number 
-  when such is not available")
+  "Holds the IEEE 802 MAC address or a random number when such is not available")
 
 (defvar *ticks-per-count* 1024 
   "Holds the amount of ticks per count. The ticks per count determine the number 
 of possible version 1 uuids created for one time interval. Common Lisp provides 
-INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current system so 
-*ticks-per-count* can be set to INTERNAL-TIME-UINITS-PER-SECOND")
+INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current system so 
+*ticks-per-count* can be set to INTERNAL-TIME-UNITS-PER-SECOND")
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   #+:sbcl
@@ -50,7 +49,6 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 		   :clock-seq-low (parse-integer uuid-string :start 21 :end 23 :radix 16)
 		   :node (parse-integer uuid-string :start 24 :end 36 :radix 16))))
 
-;; Those should be constants but I couldn't find a way to define a CLOS object to be constant
 (defparameter +namespace-dns+ (make-uuid-from-string "6ba7b810-9dad-11d1-80b4-00c04fd430c8")
   "The DNS Namespace. Can be used for the generation of uuids version 3 and 5")
 (defparameter +namespace-url+ (make-uuid-from-string "6ba7b811-9dad-11d1-80b4-00c04fd430c8")
@@ -63,7 +61,7 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 (defun get-node-id ()
   "Get MAC address of first ethernet device"
   (let ((node
-	 #+(and :linux (or :cmu :sbcl))
+	 #+(and :linux (or :cmu :sbcl :allegro))
 	 ;; todo this can be simplified a bit
 	 (let ((proc #+(and :linux :cmu)
 		     (ext:run-program "/sbin/ifconfig"
@@ -80,16 +78,26 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 					 :error t
 					 :if-error-exists nil
 					 :wait nil)
-		     ))
-	   (loop for line = (read-line #+(and :linux :cmu)
-				       (extensions:process-output proc) 
-				       #+(and :linux :sbcl)
-				       (sb-ext:process-output proc)
-				       nil) 
-		 while line 
-		 when (search "HWaddr" line :test #'string-equal)
-		 return (parse-integer (remove #\: (subseq line 38))
-				       :radix 16)))
+		     #+(and :linux :allegro)
+		     (excl:run-shell-command "/sbin/ifconfig" 
+					     :output :stream
+					     :if-error-output-exists t
+					     :wait nil)))
+	   (prog1
+	       (loop for line = (read-line #+(and :linux :cmu)
+					   (extensions:process-output proc) 
+					   #+(and :linux :sbcl)
+					   (sb-ext:process-output proc)
+					   #+(and :linux :allegro)
+					   proc
+					   nil) 
+		   while line 
+		   when (search "HWaddr" line :test #'string-equal)
+		   return (parse-integer (remove #\: (subseq line 38))
+					 :radix 16))
+	     #+(and :linux :allegro)
+	     (sys:reap-os-subprocess)))
+
 	 #+(and :windows :clisp)
 	(let ((output (ext:run-program "ipconfig" 
 				       :arguments (list "/all")
@@ -170,10 +178,13 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 	  (clock-seq-low uuid)
 	  (node uuid)))
 
+(defun format-as-urn (stream uuid)
+  "Prints the uuid as a urn"
+   (format stream "urn:uuid:~(~A~)" uuid))
+  
 (defun make-null-uuid ()
   "Generates a NULL uuid (i.e 00000000-0000-0000-0000-000000000000)"
   (make-instance 'uuid))
-
 
 (defun make-v1-uuid ()
   "Generates a version 1 (time-based) uuid."
@@ -190,13 +201,11 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 		   :clock-seq-low (ldb (byte 8 0) *clock-seq*) 
 		   :node *node*)))
 
-
 (defun make-v3-uuid (namespace name)
   "Generates a version 3 (named based MD5) uuid."
   (format-v3or5-uuid 
    (digest-uuid 3 (get-bytes (print-bytes nil namespace)) name)
    3))
-
 
 (defun make-v4-uuid ()
   "Generates a version 4 (random) uuid"
@@ -208,13 +217,11 @@ INTERNAL-TIME-UINITS-PER-SECOND which gives the ticks per count for the current 
 		 :clock-seq-low (random #xff)
 		 :node (random #xffffffffffff)))
 
-
 (defun make-v5-uuid (namespace name)
   "Generates a version 5 (name based SHA1) uuid."
   (format-v3or5-uuid 
    (digest-uuid 5 (get-bytes (print-bytes nil namespace)) name)
    5))
-
 
 (defun uuid-to-byte-array (uuid)
   "Converts an uuid to byte-array"
@@ -264,7 +271,6 @@ generation of version 3 and 5 uuids."
    (ironclad:update-digest digester (ironclad:ascii-string-to-byte-array uuid))
    (ironclad:update-digest digester (ironclad:ascii-string-to-byte-array name))
    (ironclad:produce-digest digester)))
-
 
 (defun get-bytes (uuid-string)
   "Converts a uuid-string (as returned by print-bytes) to a string of characters 
