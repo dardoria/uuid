@@ -5,10 +5,9 @@
 
 (in-package :uuid-asd)
 
-; @todo fill all fields
 (defsystem uuid
   :name "uuid"
-  :version "27-07-2008"
+  :version "09-03-2011"
   :maintainer "Boian Tzonev"
   :author "Boian Tzonev"
   :licence "LLGPL"
@@ -17,5 +16,5 @@
 
   :serial t ;; the dependencies are linear.
   :components ((:file "uuid"))
-  :depends-on ("ironclad"))
+  :depends-on ("ironclad" "trivial-utf-8"))
 

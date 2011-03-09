@@ -268,8 +268,8 @@ generation of version 3 and 5 uuids."
 					       :md5)
 					      ((= ver 5)
 					       :sha1 )))))
-   (ironclad:update-digest digester (ironclad:ascii-string-to-byte-array uuid))
-   (ironclad:update-digest digester (ironclad:ascii-string-to-byte-array name))
+   (ironclad:update-digest digester (trivial-utf-8:string-to-utf-8-bytes uuid))
+   (ironclad:update-digest digester (trivial-utf-8:string-to-utf-8-bytes name))
    (ironclad:produce-digest digester)))
 
 (defun get-bytes (uuid-string)
