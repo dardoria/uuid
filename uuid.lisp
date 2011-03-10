@@ -5,8 +5,7 @@
 ;;;; (http://opensource.franz.com/preamble.html).
 
 (defpackage :uuid
-  (:use :common-lisp :ironclad)
-  (:shadowing-import-from :common-lisp #:null) ;ironclad shadows cl:null to declare its null-cypher, I don't use either so take it from cl
+  (:use :common-lisp)
   (:export :uuid :*ticks-per-count* :make-null-uuid :make-uuid-from-string :make-v1-uuid :make-v3-uuid 
 	   :make-v4-uuid :make-v5-uuid :+namespace-dns+ :+namespace-url+ :+namespace-oid+ 
 	   :+namespace-x500+ :print-bytes :uuid-to-byte-array :byte-array-to-uuid))
@@ -26,9 +25,12 @@ of possible version 1 uuids created for one time interval. Common Lisp provides
 INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current system so 
 *ticks-per-count* can be set to INTERNAL-TIME-UNITS-PER-SECOND")
 
+(defvar *uuid-random-state* nil
+  "Holds the random state used for generation of random numbers")
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  #+:sbcl
-  (setf *random-state* (make-random-state t))
+
+  (setf *uuid-random-state* (make-random-state t))
   
   (defclass uuid ()
     ((time-low :accessor time-low :initarg :time-low :initform 0)
@@ -109,7 +111,7 @@ INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current s
 		return (parse-integer (remove #\- (subseq line 37)) :radix 16)))
 	))
     (when (not node)
-      (setf node (dpb #b01 (byte 8 0) (random #xffffffffffff))))
+      (setf node (dpb #b01 (byte 8 0) (random #xffffffffffff *uuid-random-state*))))
     node))
 
 	    
@@ -190,7 +192,7 @@ INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current s
   "Generates a version 1 (time-based) uuid."
   (let ((timestamp (get-timestamp)))
     (when (zerop *clock-seq*)
-      (setf *clock-seq* (random 10000)))
+      (setf *clock-seq* (random 10000 *uuid-random-state*)))
     (unless *node*
       (setf *node* (get-node-id)))
     (make-instance 'uuid
@@ -210,12 +212,12 @@ INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current s
 (defun make-v4-uuid ()
   "Generates a version 4 (random) uuid"
   (make-instance 'uuid
-		 :time-low (random #xffffffff)
-		 :time-mid (random #xffff)
-		 :time-high (dpb #b0100 (byte 4 12) (ldb (byte 12 0) (random #xffff)))
-		 :clock-seq-var (dpb #b10 (byte 2 6) (ldb (byte 8 0) (random #xff)))
-		 :clock-seq-low (random #xff)
-		 :node (random #xffffffffffff)))
+		 :time-low (random #xffffffff *uuid-random-state*)
+		 :time-mid (random #xffff *uuid-random-state*)
+		 :time-high (dpb #b0100 (byte 4 12) (ldb (byte 12 0) (random #xffff *uuid-random-state*)))
+		 :clock-seq-var (dpb #b10 (byte 2 6) (ldb (byte 8 0) (random #xff *uuid-random-state*)))
+		 :clock-seq-low (random #xff *uuid-random-state*)
+		 :node (random #xffffffffffff *uuid-random-state*)))
 
 (defun make-v5-uuid (namespace name)
   "Generates a version 5 (name based SHA1) uuid."
