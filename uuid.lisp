@@ -1,5 +1,5 @@
 ;;;; Author Boian Tzonev <boiantz@gmail.com>
-;;;; 2007, All Rights Reserved 
+;;;; 2007-2011, All Rights Reserved 
 ;;;;
 ;;;; This software may be distributed and used according to the terms of the Lisp Lesser GNU Public License (LLGPL)
 ;;;; (http://opensource.franz.com/preamble.html).
@@ -270,7 +270,7 @@ generation of version 3 and 5 uuids."
 					       :md5)
 					      ((= ver 5)
 					       :sha1 )))))
-   (ironclad:update-digest digester (trivial-utf-8:string-to-utf-8-bytes uuid))
+   (ironclad:update-digest digester (ironclad:ascii-string-to-byte-array uuid))
    (ironclad:update-digest digester (trivial-utf-8:string-to-utf-8-bytes name))
    (ironclad:produce-digest digester)))
 
