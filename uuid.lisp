@@ -36,12 +36,30 @@ can be set to INTERNAL-TIME-UNITS-PER-SECOND")
   (setf *uuid-random-state* (make-random-state t))
 
   (defclass uuid ()
-    ((time-low :accessor time-low :initarg :time-low :initform 0)
-     (time-mid :accessor time-mid :initarg :time-mid :initform 0)
-     (time-high-and-version :accessor time-high :initarg :time-high :initform 0)
-     (clock-seq-and-reserved :accessor clock-seq-var :initarg :clock-seq-var :initform 0)
-     (clock-seq-low :accessor clock-seq-low :initarg :clock-seq-low :initform 0)
-     (node :accessor node :initarg :node :initform 0))
+    ((time-low               :initarg  :time-low
+			     :type     (unsigned-byte 32)
+			     :accessor time-low
+			     :initform 0)
+     (time-mid               :initarg  :time-mid
+			     :type     (unsigned-byte 16)
+			     :accessor time-mid
+			     :initform 0)
+     (time-high-and-version  :initarg  :time-high
+			     :type     (unsigned-byte 16)
+			     :accessor time-high
+			     :initform 0)
+     (clock-seq-and-reserved :initarg  :clock-seq-var
+			     :type     (unsigned-byte 8)
+			     :accessor clock-seq-var
+			     :initform 0)
+     (clock-seq-low          :initarg  :clock-seq-low
+			     :type     (unsigned-byte 8)
+			     :accessor clock-seq-low
+			     :initform 0)
+     (node                   :initarg  :node
+			     :type     (unsigned-byte 48)
+			     :accessor node
+			     :initform 0))
     (:documentation "Represents an uuid"))
 
   (defun make-uuid-from-string (uuid-string)
