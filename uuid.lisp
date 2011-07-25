@@ -137,19 +137,19 @@ can be set to INTERNAL-TIME-UNITS-PER-SECOND")
 		     (sleep 0.0001)
 		     (go restart)))))))))
 
-
 (defun format-v3or5-uuid (hash ver)
   "Helper function to format a version 3 or 5 uuid. Formatting means setting the appropriate version bytes."
-  (when (or (= ver 3) (= ver 5))
-    (let ((result (byte-array-to-uuid (subseq hash 0 16))))
-      (setf (time-high result)
-	    (cond ((= ver 3)
-		   (dpb #b0011 (byte 4 12) (aref hash 6)))
-		  ((= ver 5)
-		   (dpb #b0101 (byte 4 12) (aref hash 6)))))
-      (setf (clock-seq-var result)
-	    (dpb #b10 (byte 2 6) (aref hash 8)))
-      result)))
+  (check-type ver (or (eql 3) (eql 5)) "either 3 or 5.")
+
+  (let ((result (byte-array-to-uuid (subseq hash 0 16))))
+    (setf (time-high result)     (dpb (ecase ver
+					(3 #b0011)
+					(5 #b0101))
+				      (byte 4 12)
+				      (logior (ash (aref hash 6) 8)
+					      (aref hash 7)))
+	  (clock-seq-var result) (dpb #b10 (byte 2 6) (aref hash 8)))
+    result))
 
 (defmethod print-object ((id uuid) stream)
   "Prints an uuid in the string represenation of an uuid. (example string 6ba7b810-9dad-11d1-80b4-00c04fd430c8)"
