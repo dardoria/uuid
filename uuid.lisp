@@ -62,15 +62,40 @@ can be set to INTERNAL-TIME-UNITS-PER-SECOND")
 			     :initform 0))
     (:documentation "Represents an uuid"))
 
-  (defun make-uuid-from-string (uuid-string)
+  (defun make-uuid-from-string (string)
     "Creates an uuid from the string represenation of an uuid. (example input string 6ba7b810-9dad-11d1-80b4-00c04fd430c8)"
-    (make-instance 'uuid
-		   :time-low (parse-integer uuid-string :start 0 :end 8 :radix 16)
-		   :time-mid (parse-integer uuid-string :start 9 :end 13 :radix 16)
-		   :time-high (parse-integer uuid-string :start 14 :end 18 :radix 16)
-		   :clock-seq-var (parse-integer uuid-string :start 19 :end 21 :radix 16)
-		   :clock-seq-low (parse-integer uuid-string :start 21 :end 23 :radix 16)
-		   :node (parse-integer uuid-string :start 24 :end 36 :radix 16))))
+    (labels ((parse-block (string start end)
+	       (parse-integer string :start start :end end :radix 16))
+	     (parse-cleaned-up (string)
+	       (unless (and (eq (aref string  8) #\-)
+			    (eq (aref string 13) #\-)
+			    (eq (aref string 18) #\-)
+			    (eq (aref string 23) #\-))
+		 (error "~@<Could not parse ~S as UUID: positions 8, ~
+13, 18, 21 and 23 have to contain ~C (~A) characters.~@:>"
+			string #\- (char-name #\-)))
+	       (make-instance 'uuid
+			      :time-low      (parse-block string  0 8)
+			      :time-mid      (parse-block string  9 13)
+			      :time-high     (parse-block string 14 18)
+			      :clock-seq-var (parse-block string 19 21)
+			      :clock-seq-low (parse-block string 21 23)
+			      :node          (parse-block string 24 36))))
+      (cond
+	((= (length string) 36)
+	 (parse-cleaned-up string))
+	((= (length string) 38)
+	 (unless (and (eq (aref string 0) #\{)
+		      (eq (aref string 37) #\}))
+	   (error "~@<Could not parse ~S as UUID: for UUIDs of length ~
+38, first and last characters have to be ~C (~A) and ~C (~A) ~
+characters respectively.~@:>"
+		  string #\{ (char-name #\{) #\} (char-name #\})))
+	 (parse-cleaned-up (subseq string 1 37)))
+	(t
+	 (error "~@<Could not parse ~S as UUID: string representation ~
+has invalid length (~D). Valid lengths are 36 and 38.~@:>"
+		string (length string)))))))
 
 (defparameter +namespace-dns+ (make-uuid-from-string "6ba7b810-9dad-11d1-80b4-00c04fd430c8")
   "The DNS Namespace. Can be used for the generation of uuids version 3 and 5")
