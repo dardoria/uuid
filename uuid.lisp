@@ -4,13 +4,13 @@
 ;;;; This software may be distributed and used according to the terms of the Lisp Lesser GNU Public License (LLGPL)
 ;;;; (http://opensource.franz.com/preamble.html).
 
-(defpackage :uuid
+(cl:defpackage :uuid
   (:use :common-lisp)
   (:export :uuid :*ticks-per-count* :make-null-uuid :make-uuid-from-string :make-v1-uuid :make-v3-uuid
 	   :make-v4-uuid :make-v5-uuid :uuid= :+namespace-dns+ :+namespace-url+ :+namespace-oid+
 	   :+namespace-x500+ :print-bytes :uuid-to-byte-array :byte-array-to-uuid))
 
-(in-package :uuid)
+(cl:in-package :uuid)
 
 (defvar *clock-seq* 0
   "Holds the clock sequence. It is set when a version 1 uuid is
