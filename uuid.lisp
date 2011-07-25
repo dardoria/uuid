@@ -13,17 +13,20 @@
 (in-package :uuid)
 
 (defvar *clock-seq* 0
-  "Holds the clock sequence. Is is set when a version 1 uuid is
-generated for the first time and remains unchanged during a whole session.")
+  "Holds the clock sequence. It is set when a version 1 uuid is
+generated for the first time and remains unchanged during a whole
+session.")
 
 (defvar *node* nil
-  "Holds the IEEE 802 MAC address or a random number when such is not available")
+  "Holds the IEEE 802 MAC address or a random number when such is not
+available")
 
 (defvar *ticks-per-count* 1024
-  "Holds the amount of ticks per count. The ticks per count determine the number
-of possible version 1 uuids created for one time interval. Common Lisp provides
-INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current system so
-*ticks-per-count* can be set to INTERNAL-TIME-UNITS-PER-SECOND")
+  "Holds the amount of ticks per count. The ticks per count determine
+the number of possible version 1 uuids created for one time
+interval. Common Lisp provides INTERNAL-TIME-UNITS-PER-SECOND which
+gives the ticks per count for the current system so *ticks-per-count*
+can be set to INTERNAL-TIME-UNITS-PER-SECOND")
 
 (defvar *uuid-random-state* nil
   "Holds the random state used for generation of random numbers")
