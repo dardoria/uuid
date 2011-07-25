@@ -240,7 +240,7 @@ has invalid length (~D). Valid lengths are 36 and 38.~@:>"
 (defun make-v3-uuid (namespace name)
   "Generates a version 3 (named based MD5) uuid."
   (format-v3or5-uuid
-   (digest-uuid 3 (uuid-to-byte-array namespace) name)
+   (digest-uuid :md5 (uuid-to-byte-array namespace) name)
    3))
 
 (defun make-v4-uuid ()
@@ -256,7 +256,7 @@ has invalid length (~D). Valid lengths are 36 and 38.~@:>"
 (defun make-v5-uuid (namespace name)
   "Generates a version 5 (name based SHA1) uuid."
   (format-v3or5-uuid
-   (digest-uuid 5 (uuid-to-byte-array namespace) name)
+   (digest-uuid :sha1 (uuid-to-byte-array namespace) name)
    5))
 
 (defun uuid= (uuid1 uuid2)
@@ -305,13 +305,10 @@ has invalid length (~D). Valid lengths are 36 and 38.~@:>"
 		  :clock-seq-low (aref array 9)
 		  :node (arr-to-bytes 10 15 array)))
 
-(defun digest-uuid (ver uuid name)
+(defun digest-uuid (digest uuid name)
   "Helper function that produces a digest from a namespace (a byte array) and a string. Used for the
 generation of version 3 and 5 uuids."
-  (let ((digester (ironclad:make-digest (cond ((= ver 3)
-					       :md5)
-					      ((= ver 5)
-					       :sha1 )))))
+  (let ((digester (ironclad:make-digest digest)))
     (ironclad:update-digest digester uuid)
     (ironclad:update-digest digester (trivial-utf-8:string-to-utf-8-bytes name))
     (ironclad:produce-digest digester)))
