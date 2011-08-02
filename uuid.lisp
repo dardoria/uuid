@@ -4,26 +4,29 @@
 ;;;; This software may be distributed and used according to the terms of the Lisp Lesser GNU Public License (LLGPL)
 ;;;; (http://opensource.franz.com/preamble.html).
 
-(defpackage :uuid
+(cl:defpackage :uuid
   (:use :common-lisp)
   (:export :uuid :*ticks-per-count* :make-null-uuid :make-uuid-from-string :make-v1-uuid :make-v3-uuid
 	   :make-v4-uuid :make-v5-uuid :uuid= :+namespace-dns+ :+namespace-url+ :+namespace-oid+
 	   :+namespace-x500+ :print-bytes :uuid-to-byte-array :byte-array-to-uuid))
 
-(in-package :uuid)
+(cl:in-package :uuid)
 
 (defvar *clock-seq* 0
-  "Holds the clock sequence. Is is set when a version 1 uuid is
-generated for the first time and remains unchanged during a whole session.")
+  "Holds the clock sequence. It is set when a version 1 uuid is
+generated for the first time and remains unchanged during a whole
+session.")
 
 (defvar *node* nil
-  "Holds the IEEE 802 MAC address or a random number when such is not available")
+  "Holds the IEEE 802 MAC address or a random number when such is not
+available")
 
 (defvar *ticks-per-count* 1024
-  "Holds the amount of ticks per count. The ticks per count determine the number
-of possible version 1 uuids created for one time interval. Common Lisp provides
-INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current system so
-*ticks-per-count* can be set to INTERNAL-TIME-UNITS-PER-SECOND")
+  "Holds the amount of ticks per count. The ticks per count determine
+the number of possible version 1 uuids created for one time
+interval. Common Lisp provides INTERNAL-TIME-UNITS-PER-SECOND which
+gives the ticks per count for the current system so *ticks-per-count*
+can be set to INTERNAL-TIME-UNITS-PER-SECOND")
 
 (defvar *uuid-random-state* nil
   "Holds the random state used for generation of random numbers")
@@ -33,23 +36,54 @@ INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current s
   (setf *uuid-random-state* (make-random-state t))
 
   (defclass uuid ()
-    ((time-low :accessor time-low :initarg :time-low :initform 0)
-     (time-mid :accessor time-mid :initarg :time-mid :initform 0)
-     (time-high-and-version :accessor time-high :initarg :time-high :initform 0)
-     (clock-seq-and-reserved :accessor clock-seq-var :initarg :clock-seq-var :initform 0)
-     (clock-seq-low :accessor clock-seq-low :initarg :clock-seq-low :initform 0)
-     (node :accessor node :initarg :node :initform 0))
+    ((time-low               :initarg  :time-low
+			     :type     (unsigned-byte 32)
+			     :accessor time-low
+			     :initform 0)
+     (time-mid               :initarg  :time-mid
+			     :type     (unsigned-byte 16)
+			     :accessor time-mid
+			     :initform 0)
+     (time-high-and-version  :initarg  :time-high
+			     :type     (unsigned-byte 16)
+			     :accessor time-high
+			     :initform 0)
+     (clock-seq-and-reserved :initarg  :clock-seq-var
+			     :type     (unsigned-byte 8)
+			     :accessor clock-seq-var
+			     :initform 0)
+     (clock-seq-low          :initarg  :clock-seq-low
+			     :type     (unsigned-byte 8)
+			     :accessor clock-seq-low
+			     :initform 0)
+     (node                   :initarg  :node
+			     :type     (unsigned-byte 48)
+			     :accessor node
+			     :initform 0))
     (:documentation "Represents an uuid"))
 
-  (defun make-uuid-from-string (uuid-string)
+  (defun make-uuid-from-string (string)
     "Creates an uuid from the string represenation of an uuid. (example input string 6ba7b810-9dad-11d1-80b4-00c04fd430c8)"
-    (make-instance 'uuid
-		   :time-low (parse-integer uuid-string :start 0 :end 8 :radix 16)
-		   :time-mid (parse-integer uuid-string :start 9 :end 13 :radix 16)
-		   :time-high (parse-integer uuid-string :start 14 :end 18 :radix 16)
-		   :clock-seq-var (parse-integer uuid-string :start 19 :end 21 :radix 16)
-		   :clock-seq-low (parse-integer uuid-string :start 21 :end 23 :radix 16)
-		   :node (parse-integer uuid-string :start 24 :end 36 :radix 16))))
+    (unless (= (length string) 36)
+      (error "~@<Could not parse ~S as UUID: string representation ~
+has invalid length (~D). A valid UUID string representation has 36 ~
+characters.~@:>" string (length string)))
+    (unless (and (eq (aref string  8) #\-)
+		 (eq (aref string 13) #\-)
+		 (eq (aref string 18) #\-)
+		 (eq (aref string 23) #\-))
+      (error "~@<Could not parse ~S as UUID: positions 8, ~
+13, 18, 21 and 23 have to contain ~C (~A) characters.~@:>"
+	     string #\- (char-name #\-)))
+    (labels ((parse-block (string start end)
+	       (parse-integer string :start start :end end :radix 16)))
+      (make-instance 'uuid
+		     :time-low      (parse-block string  0 8)
+		     :time-mid      (parse-block string  9 13)
+		     :time-high     (parse-block string 14 18)
+		     :clock-seq-var (parse-block string 19 21)
+		     :clock-seq-low (parse-block string 21 23)
+		     :node          (parse-block string 24 36)))))
 
 (defparameter +namespace-dns+ (make-uuid-from-string "6ba7b810-9dad-11d1-80b4-00c04fd430c8")
   "The DNS Namespace. Can be used for the generation of uuids version 3 and 5")
@@ -134,19 +168,19 @@ INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current s
 		     (sleep 0.0001)
 		     (go restart)))))))))
 
-
 (defun format-v3or5-uuid (hash ver)
   "Helper function to format a version 3 or 5 uuid. Formatting means setting the appropriate version bytes."
-  (when (or (= ver 3) (= ver 5))
-    (let ((result (byte-array-to-uuid (subseq hash 0 16))))
-      (setf (time-high result)
-	    (cond ((= ver 3)
-		   (dpb #b0011 (byte 4 12) (aref hash 6)))
-		  ((= ver 5)
-		   (dpb #b0101 (byte 4 12) (aref hash 6)))))
-      (setf (clock-seq-var result)
-	    (dpb #b10 (byte 2 6) (aref hash 8)))
-      result)))
+  (check-type ver (or (eql 3) (eql 5)) "either 3 or 5.")
+
+  (let ((result (byte-array-to-uuid (subseq hash 0 16))))
+    (setf (time-high result)     (dpb (ecase ver
+					(3 #b0011)
+					(5 #b0101))
+				      (byte 4 12)
+				      (logior (ash (aref hash 6) 8)
+					      (aref hash 7)))
+	  (clock-seq-var result) (dpb #b10 (byte 2 6) (aref hash 8)))
+    result))
 
 (defmethod print-object ((id uuid) stream)
   "Prints an uuid in the string represenation of an uuid. (example string 6ba7b810-9dad-11d1-80b4-00c04fd430c8)"
@@ -194,7 +228,7 @@ INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current s
 (defun make-v3-uuid (namespace name)
   "Generates a version 3 (named based MD5) uuid."
   (format-v3or5-uuid
-   (digest-uuid 3 (uuid-to-byte-array namespace) name)
+   (digest-uuid :md5 (uuid-to-byte-array namespace) name)
    3))
 
 (defun make-v4-uuid ()
@@ -210,7 +244,7 @@ INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current s
 (defun make-v5-uuid (namespace name)
   "Generates a version 5 (name based SHA1) uuid."
   (format-v3or5-uuid
-   (digest-uuid 5 (uuid-to-byte-array namespace) name)
+   (digest-uuid :sha1 (uuid-to-byte-array namespace) name)
    5))
 
 (defun uuid= (uuid1 uuid2)
@@ -259,13 +293,10 @@ INTERNAL-TIME-UNITS-PER-SECOND which gives the ticks per count for the current s
 		  :clock-seq-low (aref array 9)
 		  :node (arr-to-bytes 10 15 array)))
 
-(defun digest-uuid (ver uuid name)
+(defun digest-uuid (digest uuid name)
   "Helper function that produces a digest from a namespace (a byte array) and a string. Used for the
 generation of version 3 and 5 uuids."
-  (let ((digester (ironclad:make-digest (cond ((= ver 3)
-					       :md5)
-					      ((= ver 5)
-					       :sha1 )))))
+  (let ((digester (ironclad:make-digest digest)))
     (ironclad:update-digest digester uuid)
     (ironclad:update-digest digester (trivial-utf-8:string-to-utf-8-bytes name))
     (ironclad:produce-digest digester)))
