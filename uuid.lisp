@@ -28,62 +28,58 @@ interval. Common Lisp provides INTERNAL-TIME-UNITS-PER-SECOND which
 gives the ticks per count for the current system so *ticks-per-count*
 can be set to INTERNAL-TIME-UNITS-PER-SECOND")
 
-(defvar *uuid-random-state* nil
+(defparameter *uuid-random-state* nil
   "Holds the random state used for generation of random numbers")
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
+(defclass uuid ()
+  ((time-low               :initarg  :time-low
+			   :type     (unsigned-byte 32)
+			   :accessor time-low
+			   :initform 0)
+   (time-mid               :initarg  :time-mid
+			   :type     (unsigned-byte 16)
+			   :accessor time-mid
+			   :initform 0)
+   (time-high-and-version  :initarg  :time-high
+			   :type     (unsigned-byte 16)
+			   :accessor time-high
+			   :initform 0)
+   (clock-seq-and-reserved :initarg  :clock-seq-var
+			   :type     (unsigned-byte 8)
+			   :accessor clock-seq-var
+			   :initform 0)
+   (clock-seq-low          :initarg  :clock-seq-low
+			   :type     (unsigned-byte 8)
+			   :accessor clock-seq-low
+			   :initform 0)
+   (node                   :initarg  :node
+			   :type     (unsigned-byte 48)
+			   :accessor node
+			   :initform 0))
+  (:documentation "Represents an uuid"))
 
-  (setf *uuid-random-state* (make-random-state t))
-
-  (defclass uuid ()
-    ((time-low               :initarg  :time-low
-			     :type     (unsigned-byte 32)
-			     :accessor time-low
-			     :initform 0)
-     (time-mid               :initarg  :time-mid
-			     :type     (unsigned-byte 16)
-			     :accessor time-mid
-			     :initform 0)
-     (time-high-and-version  :initarg  :time-high
-			     :type     (unsigned-byte 16)
-			     :accessor time-high
-			     :initform 0)
-     (clock-seq-and-reserved :initarg  :clock-seq-var
-			     :type     (unsigned-byte 8)
-			     :accessor clock-seq-var
-			     :initform 0)
-     (clock-seq-low          :initarg  :clock-seq-low
-			     :type     (unsigned-byte 8)
-			     :accessor clock-seq-low
-			     :initform 0)
-     (node                   :initarg  :node
-			     :type     (unsigned-byte 48)
-			     :accessor node
-			     :initform 0))
-    (:documentation "Represents an uuid"))
-
-  (defun make-uuid-from-string (string)
-    "Creates an uuid from the string represenation of an uuid. (example input string 6ba7b810-9dad-11d1-80b4-00c04fd430c8)"
-    (unless (= (length string) 36)
-      (error "~@<Could not parse ~S as UUID: string representation ~
+(defun make-uuid-from-string (string)
+  "Creates an uuid from the string represenation of an uuid. (example input string 6ba7b810-9dad-11d1-80b4-00c04fd430c8)"
+  (unless (= (length string) 36)
+    (error "~@<Could not parse ~S as UUID: string representation ~
 has invalid length (~D). A valid UUID string representation has 36 ~
 characters.~@:>" string (length string)))
-    (unless (and (eq (aref string  8) #\-)
-		 (eq (aref string 13) #\-)
-		 (eq (aref string 18) #\-)
-		 (eq (aref string 23) #\-))
-      (error "~@<Could not parse ~S as UUID: positions 8, ~
+  (unless (and (eq (aref string  8) #\-)
+	       (eq (aref string 13) #\-)
+	       (eq (aref string 18) #\-)
+	       (eq (aref string 23) #\-))
+    (error "~@<Could not parse ~S as UUID: positions 8, ~
 13, 18, 21 and 23 have to contain ~C (~A) characters.~@:>"
-	     string #\- (char-name #\-)))
-    (labels ((parse-block (string start end)
+	   string #\- (char-name #\-)))
+  (labels ((parse-block (string start end)
 	       (parse-integer string :start start :end end :radix 16)))
-      (make-instance 'uuid
-		     :time-low      (parse-block string  0 8)
-		     :time-mid      (parse-block string  9 13)
-		     :time-high     (parse-block string 14 18)
-		     :clock-seq-var (parse-block string 19 21)
-		     :clock-seq-low (parse-block string 21 23)
-		     :node          (parse-block string 24 36)))))
+    (make-instance 'uuid
+		   :time-low      (parse-block string  0 8)
+		   :time-mid      (parse-block string  9 13)
+		   :time-high     (parse-block string 14 18)
+		   :clock-seq-var (parse-block string 19 21)
+		   :clock-seq-low (parse-block string 21 23)
+		   :node          (parse-block string 24 36))))
 
 (defparameter +namespace-dns+ (make-uuid-from-string "6ba7b810-9dad-11d1-80b4-00c04fd430c8")
   "The DNS Namespace. Can be used for the generation of uuids version 3 and 5")
@@ -171,7 +167,9 @@ characters.~@:>" string (length string)))
 		  when (search "ether" line :test #'string-equal)
 		  return (parse-integer (remove #\: (subseq line 7))
 					:radix 16))))))
-    (when (not node)
+    (unless node
+      (unless *uuid-random-state*
+	(setf *uuid-random-state* (make-random-state t)))
       (setf node (dpb #b01 (byte 8 0) (random #xffffffffffff *uuid-random-state*))))
     node))
 
@@ -260,6 +258,8 @@ characters.~@:>" string (length string)))
 
 (defun make-v4-uuid ()
   "Generates a version 4 (random) uuid"
+  (unless *uuid-random-state*
+    (setf *uuid-random-state* (make-random-state t)))
   (make-instance 'uuid
 		 :time-low (random #xffffffff *uuid-random-state*)
 		 :time-mid (random #xffff *uuid-random-state*)
