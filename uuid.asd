@@ -7,7 +7,7 @@
 
 (defsystem uuid
   :name "uuid"
-  :version "20-07-2011"
+  :version "2011.07.20"
   :maintainer "Boian Tzonev"
   :author "Boian Tzonev"
   :licence "LLGPL"
