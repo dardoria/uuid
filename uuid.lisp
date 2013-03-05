@@ -93,80 +93,40 @@ characters.~@:>" string (length string)))
 (defun get-node-id ()
   "Get MAC address of first ethernet device"
   (let ((node
-	 #+(and :linux (or :cmu :sbcl :allegro))
-	 (or (let ((interface (first (remove "lo"
-					     (mapcan (lambda (x) (last (pathname-directory x)))
-						     (directory "/sys/class/net/*/"))
-					     :test #'equal))))
-               (when (not (null interface))
-		 (with-open-file (address (make-pathname :directory
-							 (concatenate 'string
-								      "sys/class/net/"
-								      interface)
-							 :name "address"))
-		   (parse-integer (remove #\: (read-line address)) :radix 16))))
+	 #+linux
+	  (let ((interface (first (remove "lo"
+					  (mapcan (lambda (x) (last (pathname-directory x)))
+						  (directory "/sys/class/net/*/"))
+					  :test #'equal))))
+	    (when (not (null interface))
+	      (with-open-file (address (make-pathname :directory
+						      (concatenate 'string
+								   "/sys/class/net/"
+								   interface)
+						      :name "address"))
+		(parse-integer (remove #\: (read-line address)) :radix 16))))
 
-	     (let ((proc #+(and :linux :cmu)
-			 (ext:run-program "/sbin/ifconfig"
-					  nil
-					  :pty nil
-					  :wait t
-					  :output :stream
-					  :error t
-					  :if-error-exists nil)
-			 #+(and :linux :sbcl)
-			 (sb-ext:run-program "/sbin/ifconfig"
-					     nil
-					     :output :stream
-					     :error t
-					     :if-error-exists nil
-					     :wait nil)
-			 #+(and :linux :allegro)
-			 (excl:run-shell-command "/sbin/ifconfig"
-						 :output :stream
-						 :if-error-output-exists t
-						 :wait nil)
-			 #+(and :macosx :lispworks)
-			 (sys:run-shell-command "/sbin/ifconfig en0"
-						:output :stream
-						:if-error-output-exists t
-						:wait nil)))
-	       (prog1
-		   (loop for line = (read-line #+(and :linux :cmu)
-					       (extensions:process-output proc)
-					       #+(and :linux :sbcl)
-					       (sb-ext:process-output proc)
-					       #+(and :linux :allegro)
-					       proc
-					       nil)
-		      while line
-		      when (search "HWaddr" line :test #'string-equal)
-		      return (parse-integer (remove #\: (subseq line 38))
-					    :radix 16))
-		 #+(and :linux :allegro)
-		 (sys:reap-os-subprocess)))
+	  #+(and :windows :clisp)
+	  (let ((output (ext:run-program "ipconfig"
+					 :arguments (list "/all")
+					 :input nil
+					 :output :stream
+					 :wait t)))
+	    (loop for line = (read-line output nil) while line
+	       when (search "Physical" line :test #'string-equal)
+	       return (parse-integer (remove #\- (subseq line 37)) :radix 16)))
 
-	     #+(and :windows :clisp)
-	     (let ((output (ext:run-program "ipconfig"
-					    :arguments (list "/all")
-					    :input nil
-					    :output :stream
-					    :wait t)))
-	       (loop for line = (read-line output nil) while line
-		  when (search "Physical" line :test #'string-equal)
-		  return (parse-integer (remove #\- (subseq line 37)) :radix 16)))
-
-	     #+(and :macosx :lispworks)
-	     (with-open-stream (stream
-				(sys:run-shell-command "/sbin/ifconfig en0 ether"
-						       :output :stream
-						       :if-error-output-exists t
-						       :wait nil))
-	       (loop for line = (read-line stream nil)
-		  while line
-		  when (search "ether" line :test #'string-equal)
-		  return (parse-integer (remove #\: (subseq line 7))
-					:radix 16))))))
+	  #+(and :macosx :lispworks)
+	  (with-open-stream (stream
+			     (sys:run-shell-command "/sbin/ifconfig en0 ether"
+						    :output :stream
+						    :if-error-output-exists t
+						    :wait nil))
+	    (loop for line = (read-line stream nil)
+	       while line
+	       when (search "ether" line :test #'string-equal)
+	       return (parse-integer (remove #\: (subseq line 7))
+				     :radix 16)))))
     (unless node
       (unless *uuid-random-state*
 	(setf *uuid-random-state* (make-random-state t)))
@@ -237,6 +197,9 @@ characters.~@:>" string (length string)))
 
 (defun make-v1-uuid ()
   "Generates a version 1 (time-based) uuid."
+  (unless *uuid-random-state*
+    (setf *uuid-random-state* (make-random-state t)))
+
   (let ((timestamp (get-timestamp)))
     (when (zerop *clock-seq*)
       (setf *clock-seq* (random 10000 *uuid-random-state*)))
