@@ -6,9 +6,10 @@
 
 (cl:defpackage :uuid
   (:use :common-lisp)
-  (:export :uuid :*ticks-per-count* :make-null-uuid :make-uuid-from-string :make-v1-uuid :make-v3-uuid
-	   :make-v4-uuid :make-v5-uuid :uuid= :+namespace-dns+ :+namespace-url+ :+namespace-oid+
-	   :+namespace-x500+ :print-bytes :uuid-to-byte-array :byte-array-to-uuid))
+  (:export :uuid :*ticks-per-count* :format-as-urn :make-null-uuid :make-uuid-from-string
+	   :make-v1-uuid :make-v3-uuid :make-v4-uuid :make-v5-uuid :uuid=
+	   :+namespace-dns+ :+namespace-url+ :+namespace-oid+ :+namespace-x500+
+	   :print-bytes :uuid-to-byte-array :byte-array-to-uuid))
 
 (cl:in-package :uuid)
 
