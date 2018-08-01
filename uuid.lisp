@@ -97,13 +97,11 @@ characters.~@:>" string (length string)))
 	 #+linux
 	  (let ((interface (first (remove "lo"
 					  (mapcan (lambda (x) (last (pathname-directory x)))
-						  (directory "/sys/class/net/*/"))
+						  (directory "/sys/class/net/*/address"))
 					  :test #'equal))))
 	    (when (not (null interface))
 	      (with-open-file (address (make-pathname :directory
-						      (concatenate 'string
-								   "/sys/class/net/"
-								   interface)
+                                                      `(:absolute "sys" "class" "net" ,interface)
 						      :name "address"))
 		(parse-integer (remove #\: (read-line address)) :radix 16))))
 
