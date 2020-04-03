@@ -228,7 +228,7 @@ characters.~@:>" string (length string)))
 		 :time-high (dpb #b0100 (byte 4 12) (ldb (byte 12 0) (random #xffff *uuid-random-state*)))
 		 :clock-seq-var (dpb #b10 (byte 2 6) (ldb (byte 8 0) (random #xff *uuid-random-state*)))
 		 :clock-seq-low (random #xff *uuid-random-state*)
-		 :node (random #xffffffffffff *uuid-random-state*)))
+		 :node (ironclad:random-bits 64)))
 
 (defun make-v5-uuid (namespace name)
   "Generates a version 5 (name based SHA1) uuid."
