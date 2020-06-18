@@ -16,5 +16,5 @@
 
   :serial t ;; the dependencies are linear.
   :components ((:file "uuid"))
-  :depends-on ("ironclad" "trivial-utf-8"))
+  :depends-on (#-clasp "ironclad" "trivial-utf-8"))
 
